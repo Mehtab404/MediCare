@@ -30,3 +30,22 @@ export function initials(name: string): string {
     .slice(0, 2)
     .join("");
 }
+
+/** "No reviews yet" or "4.5 (2 reviews)". Ratings come from real patient reviews. */
+export function ratingLabel(rating: number, reviews: number): string {
+  if (reviews === 0) return "No reviews yet";
+  return `${rating.toFixed(1)} (${reviews} review${reviews === 1 ? "" : "s"})`;
+}
+
+/** Age in whole years from a "YYYY-MM-DD" date of birth. */
+export function ageFromDob(dob: string, today = new Date()): number {
+  const [y, m, d] = dob.split("-").map(Number);
+  let age = today.getFullYear() - y;
+  if (today.getMonth() + 1 < m || (today.getMonth() + 1 === m && today.getDate() < d)) age -= 1;
+  return age;
+}
+
+/** Formats an ISO timestamp as a date in the hospital's time zone. */
+export function formatTimestamp(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", dateStyle: "medium" });
+}

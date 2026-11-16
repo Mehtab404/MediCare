@@ -4,7 +4,7 @@ Read this before changing code. The work queue is in `task.md`. Pick the first t
 
 ## What the app is
 
-A patient portal for a hospital. Patients register, log in, browse doctors, book appointments (Normal or Tatkal), and view, reschedule, or cancel their bookings.
+A hospital portal with three roles. Patients register, browse doctors, book appointments (Normal or Tatkal), and view, reschedule, or cancel their bookings. Doctors (`/doctor`) manage their availability and close out visits. Admins (`/admin`) manage doctors, appointments, and accounts. Only patients can self-register; doctor and admin accounts are created by an admin (the first admin comes from `ADMIN_USER_ID` and `ADMIN_PASSWORD`).
 
 ## Stack
 
@@ -24,8 +24,9 @@ server/
   config.ts         Reads and checks environment variables
   db.ts             pg Pool and query helper
   auth.ts           JWT cookie helpers and requireAuth middleware
-  routes/           auth.ts, doctors.ts, appointments.ts
+  routes/           auth.ts, doctors.ts, appointments.ts (patient), profile.ts (patient), doctorPortal.ts (doctor), account.ts (patient email), admin.ts (admin)
   lib/dates.ts      Slot list and date/time rules shared by the routes
+  lib/mailer.ts     sendMail (SMTP, or log in dev); lib/notifications.ts and lib/reminders.ts build and schedule the emails
   lib/http.ts       HttpError and Postgres error helpers
   migrations/       Numbered .sql files, applied in order
   migrate.ts        Migration runner (also: npm run db:migrate)
@@ -60,12 +61,14 @@ npm start                Production server (serves API + dist/)
 - **The server is the source of truth.** Booking rules (availability, dates, Tatkal, past slots, double booking, price) are enforced in `server/routes/appointments.ts`. The UI may repeat them for usability, but never relies on them.
 - **SQL:** parameterized queries only (`$1, $2`). Never build SQL with string concatenation.
 - **Validation:** validate every request body and query with zod at the route.
-- **Ownership:** every appointment query filters by `patient_id = req.patientId`.
+- **Ownership:** every patient appointment query filters by `patient_id = req.patientId`. Doctor routes filter by the doctor linked to the logged-in account. Guard every route with `requireRole(...)`; `requireAuth` alone is only for routes any role may use.
 - **Errors:** API errors are JSON `{ "error": "message" }` with a fitting status code (400, 401, 404, 409). Don't leak stack traces.
 - **Secrets:** only in `.env` (git-ignored). Add new variables to `.env.example` and `server/config.ts`.
 - **Schema changes:** add a new numbered file in `server/migrations/`. Never edit a migration that has been applied.
 - **Dates:** appointment dates are `YYYY-MM-DD` strings in the hospital's local time (`Asia/Kolkata`). Don't use `toISOString()` for dates.
-- **No fake claims in the UI.** Don't say a payment, email, or report exists unless the code actually does it.
+- **No fake claims in the UI.** Don't say a payment, email, or report exists unless the code actually does it. Doctor ratings, reviews, bios and qualifications come from the database; show nothing when there is none.
+- **Email:** send appointment emails with `notifyAppointment` (`server/lib/notifications.ts`), which only reaches a verified address and never throws. Use `sendMail` directly only when the caller must know it failed (for example the verification link). Emails are plain text, built from database values, and contain no health records. Never log an email body in production.
+- **Health data:** profiles and visit records are readable only by the patient and by the doctor who holds a non-cancelled appointment with that patient. Admins don't get access. Keep it that way when adding routes.
 - **Styling:** use existing Tailwind tokens and shadcn components. Follow the patterns already used in `src/pages`.
 - **Scope:** do what the task says. Note extra ideas in `task.md` instead of building them.
 

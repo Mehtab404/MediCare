@@ -302,7 +302,7 @@ const Booking = () => {
                     <span className="text-lg font-semibold text-foreground">Total</span>
                     <span className="text-2xl font-bold text-primary">₹{amount}</span>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">Payable at the hospital reception.</p>
+                  <p className="text-xs text-muted-foreground mt-1">Payable at the billing counter.</p>
                 </div>
 
                 <Button

@@ -187,16 +187,21 @@ const Appointments = () => {
                               <Clock className="h-4 w-4" />
                               <span>{formatTime(apt.time)}</span>
                             </div>
-                            {apt.status === "cancelled" ? (
+                            {apt.status === "cancelled" || apt.status === "no_show" ? (
                               <Badge variant="outline" className="text-destructive border-destructive/40">
-                                Cancelled
+                                {apt.status === "cancelled" ? "Cancelled" : "Missed"}
                               </Badge>
                             ) : (
-                              <Badge variant="secondary">Past</Badge>
+                              <Badge variant="secondary">{apt.status === "completed" ? "Completed" : "Past"}</Badge>
                             )}
                             <Button variant="outline" size="sm" asChild>
                               <Link to={`/confirmation/${apt.id}`}>View Details</Link>
                             </Button>
+                            {apt.status === "completed" && (
+                              <Button size="sm" asChild>
+                                <Link to={`/records/${apt.id}`}>Visit Summary</Link>
+                              </Button>
+                            )}
                           </div>
                         </div>
                       </CardContent>

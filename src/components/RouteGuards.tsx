@@ -1,6 +1,8 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { Activity } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { homePath } from "@/lib/roles";
+import type { Role } from "@/types";
 
 function FullPageLoader() {
   return (
@@ -10,23 +12,31 @@ function FullPageLoader() {
   );
 }
 
-/** Pages that need a logged-in patient. Others are sent to the login page and brought back after. */
-export function ProtectedRoute() {
-  const { status } = useAuth();
+/**
+ * Pages for one kind of account. Anonymous visitors are sent to the login page and brought back after.
+ * Someone logged in with another role is sent to their own home page.
+ */
+export function ProtectedRoute({ roles }: { roles: Role[] }) {
+  const { status, user } = useAuth();
   const location = useLocation();
 
   if (status === "loading") return <FullPageLoader />;
-  if (status === "anonymous") return <Navigate to="/" replace state={{ from: location.pathname + location.search }} />;
+  if (status === "anonymous" || !user) {
+    return <Navigate to="/" replace state={{ from: location.pathname + location.search }} />;
+  }
+  if (!roles.includes(user.role)) return <Navigate to={homePath(user.role)} replace />;
   return <Outlet />;
 }
 
-/** Login and register pages. Logged-in patients go to the page they asked for, or the dashboard. */
+/** Login and register pages. Logged-in users go to the page they asked for, or their home page. */
 export function PublicOnlyRoute() {
-  const { status } = useAuth();
+  const { status, user } = useAuth();
   const location = useLocation();
   const from = (location.state as { from?: string } | null)?.from;
 
   if (status === "loading") return <FullPageLoader />;
-  if (status === "authenticated") return <Navigate to={from?.startsWith("/") ? from : "/dashboard"} replace />;
+  if (status === "authenticated" && user) {
+    return <Navigate to={from?.startsWith("/") ? from : homePath(user.role)} replace />;
+  }
   return <Outlet />;
 }

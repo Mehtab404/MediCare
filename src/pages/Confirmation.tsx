@@ -12,6 +12,8 @@ import { formatDate, formatTime, initials } from "@/lib/format";
 const STATUS_COPY = {
   upcoming: { icon: CheckCircle, tone: "success", title: "Booking Confirmed!", subtitle: "Your appointment has been booked" },
   past: { icon: History, tone: "muted", title: "Past Appointment", subtitle: "This appointment has already taken place" },
+  completed: { icon: CheckCircle, tone: "muted", title: "Visit Completed", subtitle: "The doctor marked this visit as completed" },
+  no_show: { icon: XCircle, tone: "destructive", title: "Missed Appointment", subtitle: "This appointment was marked as a no-show" },
   cancelled: { icon: XCircle, tone: "destructive", title: "Appointment Cancelled", subtitle: "This appointment was cancelled" },
 } as const;
 
@@ -147,7 +149,7 @@ const Confirmation = () => {
                 <div className="text-right">
                   <p className="text-sm text-muted-foreground">Payment</p>
                   <p className="font-medium text-foreground">
-                    {booking.status === "cancelled" ? "Nothing to pay" : "Pay at hospital reception"}
+                    {booking.status === "cancelled" ? "Nothing to pay" : "Pay at the billing counter"}
                   </p>
                 </div>
               </div>
@@ -171,7 +173,7 @@ const Confirmation = () => {
 
         {/* Help Text */}
         <p className="text-center text-sm text-muted-foreground mt-8 animate-fade-in" style={{ animationDelay: "0.3s" }}>
-          Please arrive 10 minutes before your appointment and show this booking ID at reception.
+          Please arrive 10 minutes before your appointment and show this booking ID at the billing counter.
           <br />
           For any queries, contact us at{" "}
           <a href="mailto:support@medicare.com" className="text-primary hover:underline">

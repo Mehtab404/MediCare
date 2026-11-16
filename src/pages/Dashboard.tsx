@@ -12,14 +12,16 @@ import { api } from "@/lib/api";
 import { formatDate, formatTime, initials } from "@/lib/format";
 
 const Dashboard = () => {
-  const { patient } = useAuth();
+  const { user } = useAuth();
   const appointmentsQuery = useQuery({ queryKey: ["appointments"], queryFn: api.appointments });
   const doctorsQuery = useQuery({ queryKey: ["doctors"], queryFn: api.doctors });
+  const accountQuery = useQuery({ queryKey: ["account"], queryFn: api.account });
 
   const appointments = appointmentsQuery.data ?? [];
   // The API returns appointments oldest first, so the first upcoming one is the next visit.
   const upcoming = appointments.filter((a) => a.status === "upcoming");
-  const past = appointments.filter((a) => a.status === "past");
+  // A visit counts once its time has passed, unless the doctor recorded a no-show.
+  const past = appointments.filter((a) => a.status === "past" || a.status === "completed");
   const doctorsConsulted = new Set(past.map((a) => a.doctor.id)).size;
   const next = upcoming[0];
 
@@ -33,12 +35,29 @@ const Dashboard = () => {
         {/* Welcome Section */}
         <div className="mb-8 animate-fade-in">
           <h1 className="text-3xl font-bold text-foreground mb-2">
-            Welcome back, {patient?.fullName ?? "Patient"}! 👋
+            Welcome back, {user?.fullName ?? "Patient"}! 👋
           </h1>
           <p className="text-muted-foreground">
             Here's an overview of your healthcare activities
           </p>
         </div>
+
+        {/* Prompt to turn on email notifications */}
+        {accountQuery.data?.emailEnabled && !accountQuery.data.emailVerified && (
+          <div
+            className="mb-8 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary/5 p-4 animate-fade-in"
+            role="note"
+          >
+            <p className="text-foreground">
+              {accountQuery.data.email
+                ? `Confirm ${accountQuery.data.email} to get appointment emails.`
+                : "Add your email to get appointment confirmations and reminders."}
+            </p>
+            <Button size="sm" asChild>
+              <Link to="/profile">{accountQuery.data.email ? "Finish setup" : "Add email"}</Link>
+            </Button>
+          </div>
+        )}
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
@@ -183,9 +202,11 @@ const Dashboard = () => {
                       <p className="font-medium text-foreground text-sm truncate">{doctor.name}</p>
                       <p className="text-xs text-muted-foreground">{doctor.specialization}</p>
                     </div>
-                    <Badge variant="secondary" className="text-xs">
-                      ⭐ {doctor.rating}
-                    </Badge>
+                    {doctor.reviews > 0 && (
+                      <Badge variant="secondary" className="text-xs">
+                        ⭐ {doctor.rating.toFixed(1)}
+                      </Badge>
+                    )}
                   </Link>
                 ))}
               </CardContent>

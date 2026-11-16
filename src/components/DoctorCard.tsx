@@ -3,7 +3,7 @@ import { Star, Clock, MapPin } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { initials } from "@/lib/format";
+import { initials, ratingLabel } from "@/lib/format";
 import type { Doctor } from "@/types";
 
 interface DoctorCardProps {
@@ -46,7 +46,7 @@ const DoctorCard = ({ doctor }: DoctorCardProps) => {
             </div>
             <div className="flex items-center gap-2">
               <Star className="h-4 w-4 text-warning fill-warning" />
-              <span>{doctor.rating} ({doctor.reviews} reviews)</span>
+              <span>{ratingLabel(doctor.rating, doctor.reviews)}</span>
             </div>
           </div>
 

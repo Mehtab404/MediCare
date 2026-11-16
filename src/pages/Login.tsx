@@ -28,7 +28,7 @@ const Login = () => {
 
     setIsLoading(true);
     try {
-      // On success the route guard sends the patient to the dashboard (or the page they asked for).
+      // On success the route guard sends the user to the dashboard (or the page they asked for).
       await login(userId.trim(), password);
     } catch (err) {
       toast({
@@ -86,8 +86,8 @@ const Login = () => {
 
           <Card className="border-0 shadow-xl">
             <CardHeader className="text-center pb-2">
-              <h2 className="text-2xl font-bold text-foreground">Patient Login</h2>
-              <p className="text-muted-foreground">Enter your credentials to continue</p>
+              <h2 className="text-2xl font-bold text-foreground">Log in</h2>
+              <p className="text-muted-foreground">Patients, doctors and staff log in here</p>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleLogin} className="space-y-6">
@@ -137,7 +137,12 @@ const Login = () => {
                 </Button>
               </form>
 
-              <div className="mt-6 text-center">
+              <div className="mt-6 text-center space-y-2">
+                <p className="text-sm">
+                  <Link to="/forgot-password" className="text-primary hover:underline">
+                    Forgot your password?
+                  </Link>
+                </p>
                 <p className="text-sm text-muted-foreground">
                   Don't have an account?{" "}
                   <Link to="/register" className="text-primary hover:underline font-medium">

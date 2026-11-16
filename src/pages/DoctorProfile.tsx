@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { api, ApiError } from "@/lib/api";
-import { initials } from "@/lib/format";
+import { formatTimestamp, initials, ratingLabel } from "@/lib/format";
+import { Stars } from "@/components/Stars";
 
 const DoctorProfile = () => {
   const { id } = useParams();
@@ -16,6 +17,11 @@ const DoctorProfile = () => {
   const { data: doctor, isPending, isError, error, refetch } = useQuery({
     queryKey: ["doctor", doctorId],
     queryFn: () => api.doctor(doctorId),
+    enabled: validId,
+  });
+  const reviewsQuery = useQuery({
+    queryKey: ["doctor", doctorId, "reviews"],
+    queryFn: () => api.doctorReviews(doctorId),
     enabled: validId,
   });
 
@@ -45,11 +51,10 @@ const DoctorProfile = () => {
     );
   }
 
-  const qualifications = [
-    "MBBS - All India Institute of Medical Sciences",
-    `MD - ${doctor.specialization}`,
-    "Fellowship - Advanced Training Program",
-  ];
+  const qualifications = (doctor.qualifications ?? "")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
 
   // Matches the bookable slots on the server (server/lib/dates.ts).
   const consultationHours = [
@@ -94,7 +99,7 @@ const DoctorProfile = () => {
                           </span>
                           <span className="flex items-center gap-1">
                             <Star className="h-4 w-4 text-warning fill-warning" />
-                            {doctor.rating} ({doctor.reviews} reviews)
+                            {ratingLabel(doctor.rating, doctor.reviews)}
                           </span>
                         </div>
                       </div>
@@ -110,66 +115,67 @@ const DoctorProfile = () => {
               </CardContent>
             </Card>
 
-            {/* About */}
-            <Card className="animate-fade-in" style={{ animationDelay: "0.1s" }}>
-              <CardHeader>
-                <CardTitle>About</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground leading-relaxed">
-                  {doctor.name} is a highly experienced {doctor.specialization.toLowerCase()} with over {doctor.experience} years of expertise in the field. 
-                  Known for providing compassionate care and employing the latest medical techniques, 
-                  {doctor.name.split(" ")[1]} has helped thousands of patients achieve better health outcomes. 
-                  Committed to continuous learning and patient-centered care.
-                </p>
-              </CardContent>
-            </Card>
+            {/* About: only when the hospital has written something */}
+            {doctor.bio && (
+              <Card className="animate-fade-in" style={{ animationDelay: "0.1s" }}>
+                <CardHeader>
+                  <CardTitle>About</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">{doctor.bio}</p>
+                </CardContent>
+              </Card>
+            )}
 
-            {/* Qualifications */}
-            <Card className="animate-fade-in" style={{ animationDelay: "0.2s" }}>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Award className="h-5 w-5 text-primary" />
-                  Qualifications & Experience
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-3">
-                  {qualifications.map((qual, index) => (
-                    <li key={index} className="flex items-start gap-3">
-                      <div className="w-2 h-2 rounded-full bg-primary mt-2" />
-                      <span className="text-foreground">{qual}</span>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
+            {/* Qualifications: only when the hospital has listed them */}
+            {qualifications.length > 0 && (
+              <Card className="animate-fade-in" style={{ animationDelay: "0.2s" }}>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Award className="h-5 w-5 text-primary" />
+                    Qualifications
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-3">
+                    {qualifications.map((qual, index) => (
+                      <li key={index} className="flex items-start gap-3">
+                        <div className="w-2 h-2 rounded-full bg-primary mt-2" />
+                        <span className="text-foreground">{qual}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            )}
 
-            {/* Reviews Placeholder */}
+            {/* Reviews from patients whose visit was completed */}
             <Card className="animate-fade-in" style={{ animationDelay: "0.3s" }}>
               <CardHeader>
                 <CardTitle>Patient Reviews</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {[1, 2].map((i) => (
-                    <div key={i} className="p-4 rounded-xl bg-muted/50">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="flex">
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <Star key={star} className="h-4 w-4 text-warning fill-warning" />
-                          ))}
+                {reviewsQuery.isPending && <LoadingState label="Loading reviews..." />}
+                {reviewsQuery.isError && <p className="text-muted-foreground">Couldn't load reviews.</p>}
+                {reviewsQuery.isSuccess && reviewsQuery.data.length === 0 && (
+                  <p className="text-muted-foreground">
+                    No reviews yet. Patients can review {doctor.name} after a completed visit.
+                  </p>
+                )}
+                {reviewsQuery.isSuccess && reviewsQuery.data.length > 0 && (
+                  <div className="space-y-4">
+                    {reviewsQuery.data.map((review) => (
+                      <div key={review.id} className="p-4 rounded-xl bg-muted/50">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Stars value={review.rating} />
+                          <span className="text-sm text-muted-foreground">{formatTimestamp(review.createdAt)}</span>
                         </div>
-                        <span className="text-sm text-muted-foreground">2 weeks ago</span>
+                        {review.comment && <p className="text-foreground whitespace-pre-wrap">{review.comment}</p>}
+                        <p className="text-sm text-muted-foreground mt-2">- {review.patientName}, verified visit</p>
                       </div>
-                      <p className="text-foreground">
-                        Excellent doctor! Very thorough and takes time to explain everything clearly. 
-                        Highly recommended for anyone seeking quality care.
-                      </p>
-                      <p className="text-sm text-muted-foreground mt-2">- Verified Patient</p>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>

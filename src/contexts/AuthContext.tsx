@@ -1,12 +1,12 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { api, ApiError, setUnauthorizedHandler } from "@/lib/api";
-import type { Patient } from "@/types";
+import type { User } from "@/types";
 
 type AuthStatus = "loading" | "authenticated" | "anonymous";
 
 interface AuthContextValue {
-  patient: Patient | null;
+  user: User | null;
   status: AuthStatus;
   login: (userId: string, password: string) => Promise<void>;
   register: (userId: string, fullName: string, password: string) => Promise<void>;
@@ -17,16 +17,16 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
-  const [patient, setPatient] = useState<Patient | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [status, setStatus] = useState<AuthStatus>("loading");
 
-  const signedIn = useCallback((p: Patient) => {
-    setPatient(p);
+  const signedIn = useCallback((u: User) => {
+    setUser(u);
     setStatus("authenticated");
   }, []);
 
   const signedOut = useCallback(() => {
-    setPatient(null);
+    setUser(null);
     setStatus("anonymous");
     queryClient.clear();
   }, [queryClient]);
@@ -36,7 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
     api
       .me()
-      .then((p) => !cancelled && signedIn(p))
+      .then((u) => !cancelled && signedIn(u))
       .catch((err) => {
         if (cancelled) return;
         if (!(err instanceof ApiError) || err.status !== 401) console.error(err);
@@ -55,7 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<AuthContextValue>(
     () => ({
-      patient,
+      user,
       status,
       login: async (userId, password) => signedIn(await api.login(userId, password)),
       register: async (userId, fullName, password) => signedIn(await api.register(userId, fullName, password)),
@@ -67,7 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       },
     }),
-    [patient, status, signedIn, signedOut],
+    [user, status, signedIn, signedOut],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

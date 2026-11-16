@@ -2,6 +2,8 @@
 # Deploy with Render Dashboard > New > Blueprint, and pick this repository.
 databases:
   - name: medicare-db
+    # Free databases are deleted 30 days after creation (after a 14 day grace period) and have no backups.
+    # Fine for a trial. Move to a paid plan before real patient data goes in.
     plan: free
     databaseName: medicare
     user: medicare
@@ -25,3 +27,8 @@ services:
           property: connectionString
       - key: JWT_SECRET
         generateValue: true
+      # First admin account, created on start if missing. Render asks for the password when you deploy.
+      - key: ADMIN_USER_ID
+        value: admin
+      - key: ADMIN_PASSWORD
+        sync: false
