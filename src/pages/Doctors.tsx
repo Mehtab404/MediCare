@@ -1,21 +1,34 @@
-import { useState } from "react";
-import { Search, Filter } from "lucide-react";
+import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Search, CheckCircle } from "lucide-react";
 import Header from "@/components/Header";
 import DoctorCard from "@/components/DoctorCard";
+import { ErrorState, LoadingState } from "@/components/PageState";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { doctors, specializations } from "@/data/doctors";
+import { api } from "@/lib/api";
 
 const Doctors = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSpec, setSelectedSpec] = useState("All");
+  const [availableOnly, setAvailableOnly] = useState(false);
+  const { data: doctors = [], isPending, isError, error, refetch } = useQuery({
+    queryKey: ["doctors"],
+    queryFn: api.doctors,
+  });
+
+  const specializations = useMemo(
+    () => ["All", ...Array.from(new Set(doctors.map((d) => d.specialization))).sort()],
+    [doctors],
+  );
 
   const filteredDoctors = doctors.filter((doctor) => {
     const matchesSearch = doctor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       doctor.specialization.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesSpec = selectedSpec === "All" || doctor.specialization === selectedSpec;
-    return matchesSearch && matchesSpec;
+    const matchesAvailability = !availableOnly || doctor.available;
+    return matchesSearch && matchesSpec && matchesAvailability;
   });
 
   return (
@@ -44,9 +57,14 @@ const Doctors = () => {
                 className="pl-11 h-12"
               />
             </div>
-            <Button variant="outline" className="h-12">
-              <Filter className="h-4 w-4 mr-2" />
-              Filters
+            <Button
+              variant={availableOnly ? "default" : "outline"}
+              className="h-12"
+              aria-pressed={availableOnly}
+              onClick={() => setAvailableOnly((v) => !v)}
+            >
+              <CheckCircle className="h-4 w-4 mr-2" />
+              Available only
             </Button>
           </div>
 
@@ -69,38 +87,48 @@ const Doctors = () => {
           </div>
         </div>
 
-        {/* Results Count */}
-        <p className="text-muted-foreground mb-6 animate-fade-in" style={{ animationDelay: "0.2s" }}>
-          Showing {filteredDoctors.length} doctor{filteredDoctors.length !== 1 ? "s" : ""}
-        </p>
+        {isPending && <LoadingState label="Loading doctors..." />}
+        {isError && (
+          <ErrorState title="Couldn't load doctors" message={error.message} onRetry={() => refetch()} />
+        )}
 
-        {/* Doctors Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredDoctors.map((doctor, index) => (
-            <div
-              key={doctor.id}
-              className="animate-fade-in"
-              style={{ animationDelay: `${0.1 * (index + 3)}s` }}
-            >
-              <DoctorCard doctor={doctor} />
+        {!isPending && !isError && (
+          <>
+            {/* Results Count */}
+            <p className="text-muted-foreground mb-6 animate-fade-in" style={{ animationDelay: "0.2s" }}>
+              Showing {filteredDoctors.length} doctor{filteredDoctors.length !== 1 ? "s" : ""}
+            </p>
+
+            {/* Doctors Grid */}
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredDoctors.map((doctor, index) => (
+                <div
+                  key={doctor.id}
+                  className="animate-fade-in"
+                  style={{ animationDelay: `${0.1 * (index + 3)}s` }}
+                >
+                  <DoctorCard doctor={doctor} />
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
 
-        {filteredDoctors.length === 0 && (
-          <div className="text-center py-16">
-            <p className="text-muted-foreground text-lg">No doctors found matching your criteria</p>
-            <Button
-              variant="outline"
-              className="mt-4"
-              onClick={() => {
-                setSearchQuery("");
-                setSelectedSpec("All");
-              }}
-            >
-              Clear Filters
-            </Button>
-          </div>
+            {filteredDoctors.length === 0 && (
+              <div className="text-center py-16">
+                <p className="text-muted-foreground text-lg">No doctors found matching your criteria</p>
+                <Button
+                  variant="outline"
+                  className="mt-4"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setSelectedSpec("All");
+                    setAvailableOnly(false);
+                  }}
+                >
+                  Clear Filters
+                </Button>
+              </div>
+            )}
+          </>
         )}
       </main>
     </div>

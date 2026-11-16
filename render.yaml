@@ -1,0 +1,27 @@
+# Render Blueprint: one Postgres database and one web service (API + built frontend).
+# Deploy with Render Dashboard > New > Blueprint, and pick this repository.
+databases:
+  - name: medicare-db
+    plan: free
+    databaseName: medicare
+    user: medicare
+
+services:
+  - type: web
+    name: medicare
+    runtime: node
+    plan: free
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "22.12.0"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: medicare-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true

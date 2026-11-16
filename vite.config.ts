@@ -10,7 +10,10 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "0.0.0.0",
     port: 8080,
-    allowedHosts: [".onrender.com"]
+    allowedHosts: [".onrender.com"],
+    proxy: {
+      "/api": "http://localhost:3001",
+    },
   },
   preview: {
     host: "0.0.0.0",

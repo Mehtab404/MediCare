@@ -1,24 +1,45 @@
 import { useParams, Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { Star, Clock, MapPin, Award, Phone, Mail, ArrowLeft, Calendar } from "lucide-react";
 import Header from "@/components/Header";
+import { ErrorState, LoadingState } from "@/components/PageState";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { doctors } from "@/data/doctors";
+import { api, ApiError } from "@/lib/api";
+import { initials } from "@/lib/format";
 
 const DoctorProfile = () => {
   const { id } = useParams();
-  const doctor = doctors.find((d) => d.id === Number(id));
+  const doctorId = Number(id);
+  const validId = Number.isInteger(doctorId) && doctorId > 0;
+  const { data: doctor, isPending, isError, error, refetch } = useQuery({
+    queryKey: ["doctor", doctorId],
+    queryFn: () => api.doctor(doctorId),
+    enabled: validId,
+  });
 
-  if (!doctor) {
+  if (validId && isPending) {
     return (
       <div className="min-h-screen bg-background">
         <Header />
-        <div className="container mx-auto px-4 py-16 text-center">
-          <h1 className="text-2xl font-bold text-foreground mb-4">Doctor not found</h1>
-          <Button asChild>
-            <Link to="/doctors">Back to Doctors</Link>
-          </Button>
+        <LoadingState label="Loading doctor..." />
+      </div>
+    );
+  }
+
+  if (!validId || isError || !doctor) {
+    const notFound = !validId || (error instanceof ApiError && error.status === 404);
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="container mx-auto px-4">
+          <ErrorState
+            title={notFound ? "Doctor not found" : "Couldn't load doctor"}
+            message={notFound ? undefined : error?.message}
+            onRetry={notFound ? undefined : () => refetch()}
+            backTo={{ to: "/doctors", label: "Back to Doctors" }}
+          />
         </div>
       </div>
     );
@@ -30,11 +51,10 @@ const DoctorProfile = () => {
     "Fellowship - Advanced Training Program",
   ];
 
-  const availableSlots = [
-    { day: "Monday", time: "9:00 AM - 1:00 PM" },
-    { day: "Wednesday", time: "2:00 PM - 6:00 PM" },
-    { day: "Friday", time: "9:00 AM - 1:00 PM" },
-    { day: "Saturday", time: "10:00 AM - 2:00 PM" },
+  // Matches the bookable slots on the server (server/lib/dates.ts).
+  const consultationHours = [
+    { label: "Morning", time: "9:00 AM - 12:00 PM" },
+    { label: "Afternoon", time: "2:00 PM - 5:00 PM" },
   ];
 
   return (
@@ -60,9 +80,7 @@ const DoctorProfile = () => {
               <CardContent className="relative pt-0">
                 <div className="flex flex-col sm:flex-row gap-6 -mt-16">
                   <div className="w-32 h-32 rounded-2xl border-4 border-card bg-muted flex items-center justify-center shadow-lg">
-                    <span className="text-4xl font-bold text-primary">
-                      {doctor.name.split(" ").map(n => n[0]).join("")}
-                    </span>
+                    <span className="text-4xl font-bold text-primary">{initials(doctor.name)}</span>
                   </div>
                   <div className="flex-1 pt-4 sm:pt-16">
                     <div className="flex flex-wrap items-start justify-between gap-4">
@@ -84,7 +102,7 @@ const DoctorProfile = () => {
                         variant={doctor.available ? "default" : "secondary"}
                         className={`text-sm ${doctor.available ? "bg-success" : ""}`}
                       >
-                        {doctor.available ? "Available Today" : "Not Available"}
+                        {doctor.available ? "Accepting Bookings" : "Not Available"}
                       </Badge>
                     </div>
                   </div>
@@ -170,23 +188,35 @@ const DoctorProfile = () => {
                 </div>
 
                 <div>
-                  <p className="font-medium text-foreground mb-3">Available Slots</p>
+                  <p className="font-medium text-foreground mb-3">Consultation Hours (daily)</p>
                   <div className="space-y-2">
-                    {availableSlots.map((slot, index) => (
-                      <div key={index} className="flex justify-between text-sm p-2 rounded-lg bg-muted/30">
-                        <span className="font-medium text-foreground">{slot.day}</span>
+                    {consultationHours.map((slot) => (
+                      <div key={slot.label} className="flex justify-between text-sm p-2 rounded-lg bg-muted/30">
+                        <span className="font-medium text-foreground">{slot.label}</span>
                         <span className="text-muted-foreground">{slot.time}</span>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                <Button className="w-full h-12" asChild>
-                  <Link to={`/book/${doctor.id}`}>
-                    <Calendar className="h-4 w-4 mr-2" />
-                    Book Appointment
-                  </Link>
-                </Button>
+                {doctor.available ? (
+                  <Button className="w-full h-12" asChild>
+                    <Link to={`/book/${doctor.id}`}>
+                      <Calendar className="h-4 w-4 mr-2" />
+                      Book Appointment
+                    </Link>
+                  </Button>
+                ) : (
+                  <>
+                    <Button className="w-full h-12" disabled>
+                      <Calendar className="h-4 w-4 mr-2" />
+                      Book Appointment
+                    </Button>
+                    <p className="text-sm text-muted-foreground text-center">
+                      {doctor.name} isn't taking bookings right now.
+                    </p>
+                  </>
+                )}
               </CardContent>
             </Card>
 
@@ -200,14 +230,22 @@ const DoctorProfile = () => {
                   <MapPin className="h-5 w-5 text-primary" />
                   <span>{doctor.location}</span>
                 </div>
-                <div className="flex items-center gap-3 text-muted-foreground">
-                  <Phone className="h-5 w-5 text-primary" />
-                  <span>+91 98765 43210</span>
-                </div>
-                <div className="flex items-center gap-3 text-muted-foreground">
-                  <Mail className="h-5 w-5 text-primary" />
-                  <span>{doctor.name.toLowerCase().replace(/\s|dr\./g, "")}@medicare.com</span>
-                </div>
+                {doctor.phone && (
+                  <div className="flex items-center gap-3 text-muted-foreground">
+                    <Phone className="h-5 w-5 text-primary" />
+                    <a href={`tel:${doctor.phone.replace(/\s/g, "")}`} className="hover:text-foreground">
+                      {doctor.phone}
+                    </a>
+                  </div>
+                )}
+                {doctor.email && (
+                  <div className="flex items-center gap-3 text-muted-foreground">
+                    <Mail className="h-5 w-5 text-primary" />
+                    <a href={`mailto:${doctor.email}`} className="hover:text-foreground break-all">
+                      {doctor.email}
+                    </a>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>

@@ -1,16 +1,16 @@
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Activity, LogOut, User, Calendar, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Header = () => {
   const location = useLocation();
-  const navigate = useNavigate();
+  const { patient, logout } = useAuth();
   const isLoginPage = location.pathname === "/";
 
+  // The route guard redirects to the login page once the session is cleared.
   const handleLogout = () => {
-    localStorage.removeItem("isLoggedIn");
-    localStorage.removeItem("patientName");
-    navigate("/");
+    void logout();
   };
 
   if (isLoginPage) {
@@ -62,7 +62,7 @@ const Header = () => {
           {/* User Actions */}
           <div className="flex items-center gap-3">
             <span className="hidden sm:inline text-sm opacity-90">
-              Welcome, {localStorage.getItem("patientName") || "Patient"}
+              Welcome, {patient?.fullName ?? "Patient"}
             </span>
             <Button
               variant="ghost"

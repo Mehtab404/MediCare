@@ -1,22 +1,23 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Activity, User, Lock, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Login = () => {
   const [userId, setUserId] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
+  const { login } = useAuth();
   const { toast } = useToast();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!userId || !password) {
+
+    if (!userId.trim() || !password) {
       toast({
         title: "Error",
         description: "Please enter both User ID and Password",
@@ -26,19 +27,17 @@ const Login = () => {
     }
 
     setIsLoading(true);
-    
-    // Simulate login delay
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    localStorage.setItem("isLoggedIn", "true");
-    localStorage.setItem("patientName", userId);
-    
-    toast({
-      title: "Welcome!",
-      description: "Login successful. Redirecting to dashboard...",
-    });
-    
-    navigate("/dashboard");
+    try {
+      // On success the route guard sends the patient to the dashboard (or the page they asked for).
+      await login(userId.trim(), password);
+    } catch (err) {
+      toast({
+        title: "Login failed",
+        description: err instanceof Error ? err.message : "Please try again.",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -98,6 +97,8 @@ const Login = () => {
                     <Input
                       type="text"
                       placeholder="User ID"
+                      aria-label="User ID"
+                      autoComplete="username"
                       value={userId}
                       onChange={(e) => setUserId(e.target.value)}
                       className="pl-11 h-12"
@@ -111,6 +112,8 @@ const Login = () => {
                     <Input
                       type="password"
                       placeholder="Password"
+                      aria-label="Password"
+                      autoComplete="current-password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       className="pl-11 h-12"
@@ -137,16 +140,16 @@ const Login = () => {
               <div className="mt-6 text-center">
                 <p className="text-sm text-muted-foreground">
                   Don't have an account?{" "}
-                  <a href="#" className="text-primary hover:underline font-medium">
-                    Contact Admin
-                  </a>
+                  <Link to="/register" className="text-primary hover:underline font-medium">
+                    Register
+                  </Link>
                 </p>
               </div>
             </CardContent>
           </Card>
 
           <p className="text-center text-sm text-muted-foreground mt-6">
-            © 2024 MediCare Hospital. All rights reserved.
+            © {new Date().getFullYear()} MediCare Hospital. All rights reserved.
           </p>
         </div>
       </div>

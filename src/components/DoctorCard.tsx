@@ -3,19 +3,8 @@ import { Star, Clock, MapPin } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-
-export interface Doctor {
-  id: number;
-  name: string;
-  specialization: string;
-  experience: number;
-  rating: number;
-  reviews: number;
-  available: boolean;
-  image: string;
-  location: string;
-  fee: number;
-}
+import { initials } from "@/lib/format";
+import type { Doctor } from "@/types";
 
 interface DoctorCardProps {
   doctor: Doctor;
@@ -29,9 +18,7 @@ const DoctorCard = ({ doctor }: DoctorCardProps) => {
           <div className="h-32 gradient-medical" />
           <div className="absolute -bottom-12 left-6">
             <div className="w-24 h-24 rounded-full border-4 border-card bg-muted flex items-center justify-center overflow-hidden shadow-lg">
-              <span className="text-3xl font-bold text-primary">
-                {doctor.name.split(" ").map(n => n[0]).join("")}
-              </span>
+              <span className="text-3xl font-bold text-primary">{initials(doctor.name)}</span>
             </div>
           </div>
           <Badge
@@ -72,9 +59,15 @@ const DoctorCard = ({ doctor }: DoctorCardProps) => {
               <Button variant="outline" size="sm" asChild>
                 <Link to={`/doctor/${doctor.id}`}>View Profile</Link>
               </Button>
-              <Button size="sm" asChild>
-                <Link to={`/book/${doctor.id}`}>Book Now</Link>
-              </Button>
+              {doctor.available ? (
+                <Button size="sm" asChild>
+                  <Link to={`/book/${doctor.id}`}>Book Now</Link>
+                </Button>
+              ) : (
+                <Button size="sm" disabled title="This doctor isn't taking bookings right now">
+                  Unavailable
+                </Button>
+              )}
             </div>
           </div>
         </div>

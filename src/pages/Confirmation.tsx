@@ -1,66 +1,77 @@
-import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { CheckCircle, Calendar, Clock, User, MapPin, Download, Home } from "lucide-react";
+import { Link, useParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { CheckCircle, Calendar, Clock, User, MapPin, Printer, Home, XCircle, History } from "lucide-react";
 import Header from "@/components/Header";
+import { ErrorState, LoadingState } from "@/components/PageState";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { api, ApiError } from "@/lib/api";
+import { formatDate, formatTime, initials } from "@/lib/format";
 
-interface BookingDetails {
-  doctor: {
-    name: string;
-    specialization: string;
-    location: string;
-  };
-  date: string;
-  time: string;
-  bookingType: string;
-  amount: number;
-}
+const STATUS_COPY = {
+  upcoming: { icon: CheckCircle, tone: "success", title: "Booking Confirmed!", subtitle: "Your appointment has been booked" },
+  past: { icon: History, tone: "muted", title: "Past Appointment", subtitle: "This appointment has already taken place" },
+  cancelled: { icon: XCircle, tone: "destructive", title: "Appointment Cancelled", subtitle: "This appointment was cancelled" },
+} as const;
 
 const Confirmation = () => {
-  const navigate = useNavigate();
-  const [booking, setBooking] = useState<BookingDetails | null>(null);
+  const { id } = useParams();
+  const appointmentId = Number(id);
+  const validId = Number.isInteger(appointmentId) && appointmentId > 0;
+  const { data: booking, isPending, isError, error, refetch } = useQuery({
+    queryKey: ["appointments", appointmentId],
+    queryFn: () => api.appointment(appointmentId),
+    enabled: validId,
+  });
 
-  useEffect(() => {
-    const storedBooking = localStorage.getItem("currentBooking");
-    if (storedBooking) {
-      setBooking(JSON.parse(storedBooking));
-    } else {
-      navigate("/dashboard");
-    }
-  }, [navigate]);
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-IN", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
-
-  if (!booking) {
-    return null;
+  if (validId && isPending) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <LoadingState label="Loading appointment..." />
+      </div>
+    );
   }
+
+  if (!validId || isError || !booking) {
+    const notFound = !validId || (error instanceof ApiError && error.status === 404);
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="container mx-auto px-4">
+          <ErrorState
+            title={notFound ? "Appointment not found" : "Couldn't load appointment"}
+            message={notFound ? undefined : error?.message}
+            onRetry={notFound ? undefined : () => refetch()}
+            backTo={{ to: "/appointments", label: "My Appointments" }}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  const copy = STATUS_COPY[booking.status];
+  const StatusIcon = copy.icon;
+  const toneBg = { success: "bg-success/10", muted: "bg-muted", destructive: "bg-destructive/10" }[copy.tone];
+  const toneText = { success: "text-success", muted: "text-muted-foreground", destructive: "text-destructive" }[copy.tone];
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      <div className="print:hidden">
+        <Header />
+      </div>
 
       <main className="container mx-auto px-4 py-8 max-w-2xl">
         <div className="text-center mb-8 animate-fade-in">
-          {/* Success Icon */}
-          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-success/10 flex items-center justify-center">
-            <CheckCircle className="h-12 w-12 text-success" />
+          {/* Status Icon */}
+          <div className={`w-20 h-20 mx-auto mb-6 rounded-full ${toneBg} flex items-center justify-center`}>
+            <StatusIcon className={`h-12 w-12 ${toneText}`} />
           </div>
 
-          <h1 className="text-3xl font-bold text-foreground mb-2">
-            Booking Confirmed!
-          </h1>
-          <p className="text-muted-foreground">
-            Your appointment has been successfully booked
-          </p>
+          <h1 className="text-3xl font-bold text-foreground mb-2">{copy.title}</h1>
+          <p className="text-muted-foreground">{copy.subtitle}</p>
+          <p className="text-sm text-muted-foreground mt-1">Booking ID: #{booking.id}</p>
         </div>
 
         {/* Booking Details Card */}
@@ -69,7 +80,7 @@ const Confirmation = () => {
             {/* Doctor Info */}
             <div className="flex items-center gap-4 mb-6">
               <div className="w-16 h-16 rounded-full gradient-medical flex items-center justify-center text-primary-foreground text-xl font-bold">
-                {booking.doctor.name.split(" ").map(n => n[0]).join("")}
+                {initials(booking.doctor.name)}
               </div>
               <div>
                 <h2 className="text-xl font-semibold text-foreground">{booking.doctor.name}</h2>
@@ -87,7 +98,7 @@ const Confirmation = () => {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Date</p>
-                  <p className="font-medium text-foreground">{formatDate(booking.date)}</p>
+                  <p className="font-medium text-foreground">{formatDate(booking.date, "long")}</p>
                 </div>
               </div>
 
@@ -97,7 +108,7 @@ const Confirmation = () => {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Time</p>
-                  <p className="font-medium text-foreground">{booking.time}</p>
+                  <p className="font-medium text-foreground">{formatTime(booking.time)}</p>
                 </div>
               </div>
 
@@ -125,15 +136,19 @@ const Confirmation = () => {
             <Separator className="my-6" />
 
             {/* Payment Summary */}
-            <div className="p-4 rounded-xl bg-success/10 border border-success/30">
+            <div className="p-4 rounded-xl bg-muted/50 border border-border">
               <div className="flex justify-between items-center">
                 <div>
-                  <p className="text-sm text-muted-foreground">Amount Paid</p>
-                  <p className="text-2xl font-bold text-success">₹{booking.amount}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {booking.status === "cancelled" ? "Amount" : "Amount Payable"}
+                  </p>
+                  <p className="text-2xl font-bold text-foreground">₹{booking.amount}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm text-muted-foreground">Status</p>
-                  <p className="font-medium text-success">Payment Successful</p>
+                  <p className="text-sm text-muted-foreground">Payment</p>
+                  <p className="font-medium text-foreground">
+                    {booking.status === "cancelled" ? "Nothing to pay" : "Pay at hospital reception"}
+                  </p>
                 </div>
               </div>
             </div>
@@ -141,10 +156,10 @@ const Confirmation = () => {
         </Card>
 
         {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row gap-4 animate-fade-in" style={{ animationDelay: "0.2s" }}>
-          <Button variant="outline" className="flex-1 h-12">
-            <Download className="h-4 w-4 mr-2" />
-            Download Receipt
+        <div className="flex flex-col sm:flex-row gap-4 animate-fade-in print:hidden" style={{ animationDelay: "0.2s" }}>
+          <Button variant="outline" className="flex-1 h-12" onClick={() => window.print()}>
+            <Printer className="h-4 w-4 mr-2" />
+            Print / Save Receipt
           </Button>
           <Button className="flex-1 h-12" asChild>
             <Link to="/dashboard">
@@ -156,7 +171,7 @@ const Confirmation = () => {
 
         {/* Help Text */}
         <p className="text-center text-sm text-muted-foreground mt-8 animate-fade-in" style={{ animationDelay: "0.3s" }}>
-          A confirmation email has been sent to your registered email address.
+          Please arrive 10 minutes before your appointment and show this booking ID at reception.
           <br />
           For any queries, contact us at{" "}
           <a href="mailto:support@medicare.com" className="text-primary hover:underline">

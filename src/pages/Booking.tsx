@@ -1,7 +1,10 @@
 import { useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Calendar, Clock, CreditCard, AlertTriangle } from "lucide-react";
 import Header from "@/components/Header";
+import SlotPicker from "@/components/SlotPicker";
+import { ErrorState, LoadingState } from "@/components/PageState";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,51 +12,72 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { doctors } from "@/data/doctors";
+import { api, ApiError } from "@/lib/api";
+import { formatDate, formatTime, initials } from "@/lib/format";
+import type { BookingType } from "@/types";
 
 const Booking = () => {
   const { id } = useParams();
+  const doctorId = Number(id);
+  const validId = Number.isInteger(doctorId) && doctorId > 0;
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { toast } = useToast();
-  const doctor = doctors.find((d) => d.id === Number(id));
 
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
-  const [bookingType, setBookingType] = useState<"normal" | "tatkal">("normal");
+  const [bookingType, setBookingType] = useState<BookingType>("normal");
 
-  const timeSlots = [
-    "9:00 AM", "9:30 AM", "10:00 AM", "10:30 AM",
-    "11:00 AM", "11:30 AM", "2:00 PM", "2:30 PM",
-    "3:00 PM", "3:30 PM", "4:00 PM", "4:30 PM"
-  ];
+  const doctorQuery = useQuery({
+    queryKey: ["doctor", doctorId],
+    queryFn: () => api.doctor(doctorId),
+    enabled: validId,
+  });
+  // Booking window (today, tomorrow, max date) in the hospital's time zone.
+  const windowQuery = useQuery({
+    queryKey: ["slots", doctorId, null],
+    queryFn: () => api.slots(doctorId),
+    enabled: validId,
+  });
+  const slotsQuery = useQuery({
+    queryKey: ["slots", doctorId, selectedDate],
+    queryFn: () => api.slots(doctorId, selectedDate),
+    enabled: validId && !!selectedDate,
+  });
 
-  const getTomorrowDate = () => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    return tomorrow.toISOString().split("T")[0];
+  const booking = useMutation({
+    mutationFn: api.book,
+    onSuccess: (appointment) => {
+      queryClient.invalidateQueries({ queryKey: ["appointments"] });
+      queryClient.invalidateQueries({ queryKey: ["slots", doctorId] });
+      navigate(`/confirmation/${appointment.id}`);
+    },
+    onError: (err) => {
+      toast({ title: "Booking failed", description: err.message, variant: "destructive" });
+      if (err instanceof ApiError && err.status === 409) {
+        setSelectedTime("");
+        slotsQuery.refetch();
+      }
+    },
+  });
+
+  const doctor = doctorQuery.data;
+  const bookingWindow = windowQuery.data;
+  const tatkalFee = bookingWindow?.tatkalFee ?? 300;
+  const amount = doctor ? doctor.fee + (bookingType === "tatkal" ? tatkalFee : 0) : 0;
+
+  const changeDate = (date: string) => {
+    setSelectedDate(date);
+    setSelectedTime("");
   };
 
-  const getMinDate = () => {
-    if (bookingType === "tatkal") {
-      return getTomorrowDate();
-    }
-    return new Date().toISOString().split("T")[0];
-  };
-
-  const getAmount = () => {
-    if (!doctor) return 0;
-    return bookingType === "tatkal" ? doctor.fee + 300 : doctor.fee;
-  };
-
-  const handleBookingTypeChange = (value: "normal" | "tatkal") => {
+  const handleBookingTypeChange = (value: BookingType) => {
     setBookingType(value);
-    if (value === "tatkal") {
-      setSelectedDate(getTomorrowDate());
-    }
+    if (value === "tatkal" && bookingWindow) changeDate(bookingWindow.tomorrow);
   };
 
   const handleSubmit = () => {
-    if (!selectedDate || !selectedTime) {
+    if (!doctor || !selectedDate || !selectedTime) {
       toast({
         title: "Error",
         description: "Please select both date and time slot",
@@ -61,29 +85,46 @@ const Booking = () => {
       });
       return;
     }
-
-    // Store booking details
-    const bookingDetails = {
-      doctor,
-      date: selectedDate,
-      time: selectedTime,
-      bookingType,
-      amount: getAmount(),
-    };
-    localStorage.setItem("currentBooking", JSON.stringify(bookingDetails));
-
-    navigate("/confirmation");
+    booking.mutate({ doctorId: doctor.id, date: selectedDate, time: selectedTime, bookingType });
   };
 
-  if (!doctor) {
+  if (validId && (doctorQuery.isPending || windowQuery.isPending)) {
     return (
       <div className="min-h-screen bg-background">
         <Header />
-        <div className="container mx-auto px-4 py-16 text-center">
-          <h1 className="text-2xl font-bold text-foreground mb-4">Doctor not found</h1>
-          <Button asChild>
-            <Link to="/doctors">Back to Doctors</Link>
-          </Button>
+        <LoadingState />
+      </div>
+    );
+  }
+
+  if (!validId || !doctor || !bookingWindow) {
+    const err = doctorQuery.error ?? windowQuery.error;
+    const notFound = !validId || (err instanceof ApiError && err.status === 404);
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="container mx-auto px-4">
+          <ErrorState
+            title={notFound ? "Doctor not found" : "Couldn't load booking details"}
+            message={notFound ? undefined : err?.message}
+            onRetry={notFound ? undefined : () => { doctorQuery.refetch(); windowQuery.refetch(); }}
+            backTo={{ to: "/doctors", label: "Back to Doctors" }}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  if (!doctor.available) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="container mx-auto px-4">
+          <ErrorState
+            title="Not taking bookings"
+            message={`${doctor.name} isn't taking bookings right now. Please choose another doctor.`}
+            backTo={{ to: "/doctors", label: "Back to Doctors" }}
+          />
         </div>
       </div>
     );
@@ -124,7 +165,7 @@ const Booking = () => {
               <CardContent>
                 <RadioGroup
                   value={bookingType}
-                  onValueChange={(v) => handleBookingTypeChange(v as "normal" | "tatkal")}
+                  onValueChange={(v) => handleBookingTypeChange(v as BookingType)}
                   className="grid grid-cols-2 gap-4"
                 >
                   <div>
@@ -153,7 +194,7 @@ const Booking = () => {
                       className="flex flex-col items-center justify-between rounded-xl border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary cursor-pointer transition-all"
                     >
                       <span className="text-lg font-semibold">Tatkal</span>
-                      <span className="text-2xl font-bold text-warning">₹{doctor.fee + 300}</span>
+                      <span className="text-2xl font-bold text-warning">₹{doctor.fee + tatkalFee}</span>
                       <span className="text-sm text-muted-foreground">Next day only</span>
                     </Label>
                   </div>
@@ -163,7 +204,7 @@ const Booking = () => {
                   <div className="mt-4 p-3 rounded-lg bg-warning/10 border border-warning/30 flex items-start gap-2">
                     <AlertTriangle className="h-5 w-5 text-warning shrink-0 mt-0.5" />
                     <p className="text-sm text-foreground">
-                      Tatkal booking is available only for next-day appointments. Additional ₹300 convenience fee applies.
+                      Tatkal booking is available only for next-day appointments. Additional ₹{tatkalFee} convenience fee applies.
                     </p>
                   </div>
                 )}
@@ -181,9 +222,11 @@ const Booking = () => {
               <CardContent>
                 <Input
                   type="date"
+                  aria-label="Appointment date"
                   value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  min={getMinDate()}
+                  onChange={(e) => changeDate(e.target.value)}
+                  min={bookingType === "tatkal" ? bookingWindow.tomorrow : bookingWindow.today}
+                  max={bookingType === "tatkal" ? bookingWindow.tomorrow : bookingWindow.maxDate}
                   className="h-12"
                   disabled={bookingType === "tatkal"}
                 />
@@ -199,22 +242,16 @@ const Booking = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-                  {timeSlots.map((time) => (
-                    <Badge
-                      key={time}
-                      variant={selectedTime === time ? "default" : "outline"}
-                      className={`py-3 px-4 justify-center cursor-pointer transition-all ${
-                        selectedTime === time
-                          ? "bg-primary text-primary-foreground"
-                          : "hover:bg-muted"
-                      }`}
-                      onClick={() => setSelectedTime(time)}
-                    >
-                      {time}
-                    </Badge>
-                  ))}
-                </div>
+                {slotsQuery.isError ? (
+                  <p className="text-destructive">{slotsQuery.error.message}</p>
+                ) : (
+                  <SlotPicker
+                    slots={selectedDate ? slotsQuery.data?.slots : null}
+                    selected={selectedTime}
+                    onSelect={setSelectedTime}
+                    loading={!!selectedDate && slotsQuery.isPending}
+                  />
+                )}
               </CardContent>
             </Card>
           </div>
@@ -229,7 +266,7 @@ const Booking = () => {
                 {/* Doctor Info */}
                 <div className="flex items-center gap-3 pb-4 border-b border-border">
                   <div className="w-12 h-12 rounded-full gradient-medical flex items-center justify-center text-primary-foreground font-bold">
-                    {doctor.name.split(" ").map(n => n[0]).join("")}
+                    {initials(doctor.name)}
                   </div>
                   <div>
                     <p className="font-semibold text-foreground">{doctor.name}</p>
@@ -239,16 +276,16 @@ const Booking = () => {
 
                 {/* Details */}
                 <div className="space-y-3 text-sm">
-                  <div className="flex justify-between">
+                  <div className="flex justify-between gap-2">
                     <span className="text-muted-foreground">Date</span>
-                    <span className="font-medium text-foreground">
-                      {selectedDate || "Not selected"}
+                    <span className="font-medium text-foreground text-right">
+                      {selectedDate ? formatDate(selectedDate) : "Not selected"}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Time</span>
                     <span className="font-medium text-foreground">
-                      {selectedTime || "Not selected"}
+                      {selectedTime ? formatTime(selectedTime) : "Not selected"}
                     </span>
                   </div>
                   <div className="flex justify-between">
@@ -263,16 +300,17 @@ const Booking = () => {
                 <div className="pt-4 border-t border-border">
                   <div className="flex justify-between items-center">
                     <span className="text-lg font-semibold text-foreground">Total</span>
-                    <span className="text-2xl font-bold text-primary">₹{getAmount()}</span>
+                    <span className="text-2xl font-bold text-primary">₹{amount}</span>
                   </div>
+                  <p className="text-xs text-muted-foreground mt-1">Payable at the hospital reception.</p>
                 </div>
 
                 <Button
                   className="w-full h-12"
                   onClick={handleSubmit}
-                  disabled={!selectedDate || !selectedTime}
+                  disabled={!selectedDate || !selectedTime || booking.isPending}
                 >
-                  Confirm Booking
+                  {booking.isPending ? "Booking..." : "Confirm Booking"}
                 </Button>
               </CardContent>
             </Card>
