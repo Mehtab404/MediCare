@@ -6,7 +6,7 @@ import UsersPanel from "@/components/admin/UsersPanel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const AdminDashboard = () => (
-  <div className="min-h-screen bg-background">
+  <div className="min-h-screen app-bg">
     <Header />
     <main className="container mx-auto px-4 py-8">
       <div className="mb-8 animate-fade-in">

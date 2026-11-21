@@ -113,9 +113,9 @@ export default {
         "view-in": "view-in 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards",
       },
       fontFamily: {
-        sans: ["Inter", "system-ui", "sans-serif"],
-        // Used by the login, register and forgot-password pages.
+        sans: ['"Plus Jakarta Sans"', "system-ui", "sans-serif"],
         jakarta: ['"Plus Jakarta Sans"', "system-ui", "sans-serif"],
+        // Serif for page titles and big numbers, mono for small labels.
         display: ['"Instrument Serif"', "Georgia", "serif"],
         code: ['"JetBrains Mono"', "ui-monospace", "monospace"],
       },

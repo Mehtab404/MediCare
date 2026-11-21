@@ -29,7 +29,7 @@ const Confirmation = () => {
 
   if (validId && isPending) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen app-bg">
         <Header />
         <LoadingState label="Loading appointment..." />
       </div>
@@ -39,7 +39,7 @@ const Confirmation = () => {
   if (!validId || isError || !booking) {
     const notFound = !validId || (error instanceof ApiError && error.status === 404);
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen app-bg">
         <Header />
         <div className="container mx-auto px-4">
           <ErrorState
@@ -59,7 +59,7 @@ const Confirmation = () => {
   const toneText = { success: "text-success", muted: "text-muted-foreground", destructive: "text-destructive" }[copy.tone];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen app-bg">
       <div className="print:hidden">
         <Header />
       </div>

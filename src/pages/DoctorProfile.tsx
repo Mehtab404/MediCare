@@ -27,7 +27,7 @@ const DoctorProfile = () => {
 
   if (validId && isPending) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen app-bg">
         <Header />
         <LoadingState label="Loading doctor..." />
       </div>
@@ -37,7 +37,7 @@ const DoctorProfile = () => {
   if (!validId || isError || !doctor) {
     const notFound = !validId || (error instanceof ApiError && error.status === 404);
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen app-bg">
         <Header />
         <div className="container mx-auto px-4">
           <ErrorState
@@ -63,7 +63,7 @@ const DoctorProfile = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen app-bg">
       <Header />
 
       <main className="container mx-auto px-4 py-8">

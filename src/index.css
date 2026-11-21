@@ -15,7 +15,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 210 50% 10%;
 
-    --primary: 210 100% 40%;
+    --primary: 195 27% 14%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 180 50% 40%;
@@ -32,7 +32,7 @@
 
     --border: 210 20% 88%;
     --input: 210 20% 88%;
-    --ring: 210 100% 40%;
+    --ring: 195 27% 14%;
 
     --radius: 0.75rem;
 
@@ -130,6 +130,23 @@
 
   .btn-medical {
     @apply bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-200;
+  }
+
+  /* Signed-in pages: soft teal gradient behind everything, frosted cards on top */
+  .app-bg {
+    background:
+      radial-gradient(65% 45% at 12% 8%, rgba(20, 128, 122, 0.08) 0%, transparent 65%),
+      radial-gradient(55% 45% at 88% 14%, rgba(20, 128, 122, 0.06) 0%, transparent 65%),
+      linear-gradient(135deg, #e3f0f2 0%, #eef6f7 48%, #f8fafc 100%);
+    background-attachment: fixed;
+  }
+
+  .glass-card {
+    background: rgba(255, 255, 255, 0.88);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 20px 50px -12px rgba(15, 23, 42, 0.07);
   }
 
   /* Login, register and forgot-password pages */

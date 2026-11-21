@@ -46,7 +46,7 @@ const VisitSummary = () => {
   if (!validId || isPending || isError) {
     const notFound = !validId || (error instanceof ApiError && error.status === 404);
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen app-bg">
         <Header />
         {validId && isPending ? (
           <LoadingState label="Loading visit summary..." />
@@ -71,7 +71,7 @@ const VisitSummary = () => {
   const { appointment, record, review } = data;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen app-bg">
       <div className="print:hidden">
         <Header />
       </div>

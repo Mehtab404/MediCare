@@ -90,7 +90,7 @@ const Booking = () => {
 
   if (validId && (doctorQuery.isPending || windowQuery.isPending)) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen app-bg">
         <Header />
         <LoadingState />
       </div>
@@ -101,7 +101,7 @@ const Booking = () => {
     const err = doctorQuery.error ?? windowQuery.error;
     const notFound = !validId || (err instanceof ApiError && err.status === 404);
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen app-bg">
         <Header />
         <div className="container mx-auto px-4">
           <ErrorState
@@ -117,7 +117,7 @@ const Booking = () => {
 
   if (!doctor.available) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen app-bg">
         <Header />
         <div className="container mx-auto px-4">
           <ErrorState
@@ -131,7 +131,7 @@ const Booking = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen app-bg">
       <Header />
 
       <main className="container mx-auto px-4 py-8 max-w-4xl">

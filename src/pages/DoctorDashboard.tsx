@@ -73,7 +73,7 @@ const DoctorDashboard = () => {
   const closed = appointments.filter((a) => a.status === "completed" || a.status === "no_show").reverse();
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen app-bg">
       <Header />
       <main className="container mx-auto px-4 py-8 space-y-8">
         <div className="animate-fade-in">

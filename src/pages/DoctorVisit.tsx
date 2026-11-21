@@ -239,7 +239,7 @@ const DoctorVisit = () => {
   if (!validId || isPending || isError) {
     const notFound = !validId || (error instanceof ApiError && (error.status === 404 || error.status === 409));
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen app-bg">
         <Header />
         {validId && isPending ? (
           <LoadingState label="Loading appointment..." />
@@ -263,7 +263,7 @@ const DoctorVisit = () => {
   const editorKey = data.record?.updatedAt ?? "none";
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen app-bg">
       <Header />
       <main className="container mx-auto px-4 py-8 pb-32 max-w-3xl space-y-6">
         <Link to="/doctor" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
