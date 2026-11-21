@@ -4,10 +4,8 @@ import { Search, CheckCircle } from "lucide-react";
 import Header from "@/components/Header";
 import DoctorCard from "@/components/DoctorCard";
 import { ErrorState, LoadingState } from "@/components/PageState";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
+import { cn } from "@/lib/utils";
 
 const Doctors = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -32,57 +30,66 @@ const Doctors = () => {
   });
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen app-bg">
       <Header />
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 pt-10 pb-14">
         {/* Page Header */}
         <div className="mb-8 animate-fade-in">
-          <h1 className="text-3xl font-bold text-foreground mb-2">Our Doctors</h1>
-          <p className="text-muted-foreground">
-            Find and book appointments with our experienced specialists
-          </p>
+          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-[#0F172A]">
+            Our{" "}
+            <span className="font-display italic font-normal text-4xl sm:text-5xl text-[#14807A]">Doctors</span>
+          </h1>
+          <p className="text-sm text-slate-600 mt-1">Find and book appointments with our experienced specialists</p>
         </div>
 
         {/* Search and Filter */}
         <div className="mb-8 space-y-4 animate-fade-in" style={{ animationDelay: "0.1s" }}>
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-              <Input
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <input
                 type="text"
+                aria-label="Search doctors"
                 placeholder="Search doctors by name or specialization..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-11 h-12"
+                className="w-full pl-11 pr-4 py-3 rounded-2xl border border-[#E2E8F0] bg-white/90 text-sm font-medium text-[#0F172A] placeholder:text-slate-400 focus:bg-white focus:border-[#0F172A] focus:ring-2 focus:ring-[#0F172A]/10 focus:outline-none transition-all"
               />
             </div>
-            <Button
-              variant={availableOnly ? "default" : "outline"}
-              className="h-12"
+            <button
+              type="button"
               aria-pressed={availableOnly}
               onClick={() => setAvailableOnly((v) => !v)}
+              className={cn(
+                "px-5 py-3 rounded-2xl text-sm font-semibold inline-flex items-center justify-center gap-2 border transition-all cursor-pointer",
+                availableOnly
+                  ? "bg-[#1B2A2F] text-white border-[#1B2A2F] shadow-sm"
+                  : "bg-white/90 text-slate-600 border-[#E2E8F0] hover:bg-white",
+              )}
             >
-              <CheckCircle className="h-4 w-4 mr-2" />
+              <CheckCircle className="h-4 w-4" />
               Available only
-            </Button>
+            </button>
           </div>
 
           {/* Specialization Pills */}
           <div className="flex flex-wrap gap-2">
             {specializations.map((spec) => (
-              <Badge
+              <button
                 key={spec}
-                variant={selectedSpec === spec ? "default" : "outline"}
-                className={`cursor-pointer transition-all px-4 py-2 text-sm ${
-                  selectedSpec === spec
-                    ? "bg-primary text-primary-foreground"
-                    : "hover:bg-muted"
-                }`}
+                type="button"
+                aria-pressed={selectedSpec === spec}
                 onClick={() => setSelectedSpec(spec)}
+                className={cn(
+                  "px-4 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer",
+                  selectedSpec === spec
+                    ? "bg-[#1B2A2F] text-white shadow-sm"
+                    : "bg-white/85 text-slate-600 border border-slate-200 hover:bg-white",
+                )}
               >
                 {spec}
-              </Badge>
+              </button>
             ))}
           </div>
         </div>
@@ -95,7 +102,7 @@ const Doctors = () => {
         {!isPending && !isError && (
           <>
             {/* Results Count */}
-            <p className="text-muted-foreground mb-6 animate-fade-in" style={{ animationDelay: "0.2s" }}>
+            <p className="text-sm text-slate-600 mb-6 animate-fade-in" style={{ animationDelay: "0.2s" }}>
               Showing {filteredDoctors.length} doctor{filteredDoctors.length !== 1 ? "s" : ""}
             </p>
 
@@ -113,11 +120,11 @@ const Doctors = () => {
             </div>
 
             {filteredDoctors.length === 0 && (
-              <div className="text-center py-16">
-                <p className="text-muted-foreground text-lg">No doctors found matching your criteria</p>
-                <Button
-                  variant="outline"
-                  className="mt-4"
+              <div className="glass-card rounded-[24px] text-center py-14 px-6">
+                <p className="text-base font-semibold text-[#0F172A]">No doctors found matching your criteria</p>
+                <button
+                  type="button"
+                  className="mt-4 px-5 py-2.5 rounded-full border border-slate-200 bg-white hover:bg-slate-50 text-xs font-semibold text-[#0F172A] transition-colors cursor-pointer"
                   onClick={() => {
                     setSearchQuery("");
                     setSelectedSpec("All");
@@ -125,7 +132,7 @@ const Doctors = () => {
                   }}
                 >
                   Clear Filters
-                </Button>
+                </button>
               </div>
             )}
           </>
