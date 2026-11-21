@@ -1,8 +1,32 @@
 # MediCare
-live product: https://medicare-84qx.onrender.com/
-
 
 A hospital patient portal. Patients create an account, browse doctors, book Normal or Tatkal appointments, and view, reschedule, or cancel their bookings. All data is stored in PostgreSQL.
+
+**Live demo:** https://medicare-84qx.onrender.com/
+
+> Hosted on Render's free plan. The first load after a period of inactivity can take 30 to 60 seconds. Use fake data only: the demo database is not meant for real patient information.
+
+## Contents
+
+- [Tech stack](#tech-stack)
+- [Features](#features)
+- [Run locally](#run-locally)
+- [Environment variables](#environment-variables)
+- [Scripts](#scripts)
+- [API](#api)
+- [Email](#email)
+- [Deploy to Render](#deploy-to-render)
+- [Project structure](#project-structure)
+- [Contributing](#contributing)
+
+## Tech stack
+
+| Part | Tech |
+|---|---|
+| Frontend | React 18, TypeScript, Vite, Tailwind CSS, shadcn/ui, React Router, TanStack Query |
+| Backend | Node.js, Express 5, TypeScript (run with `tsx`), zod validation |
+| Database | PostgreSQL 17 (`pg`, plain SQL migrations) |
+| Hosting | Render (web service + Render Postgres) |
 
 ## Features
 
@@ -22,14 +46,7 @@ A hospital patient portal. Patients create an account, browse doctors, book Norm
 
 Fees are paid at the hospital's billing counter. The app doesn't take online payments, and it doesn't record whether a fee has been paid.
 
-## Tech stack
-
-| Part | Tech |
-|---|---|
-| Frontend | React 18, TypeScript, Vite, Tailwind CSS, shadcn/ui, React Router, TanStack Query |
-| Backend | Node.js, Express 5, TypeScript (run with `tsx`), zod validation |
-| Database | PostgreSQL 17 (`pg`, plain SQL migrations) |
-| Hosting | Render (web service + Render Postgres) |
+**Privacy by design:** admins can't read patients' health profiles or visit records and can't reset a patient's password. A doctor sees a patient's health profile only for an appointment they hold with that patient.
 
 ## Run locally
 
@@ -185,3 +202,7 @@ src/lib/           API client and formatting helpers
 task.md            Work list
 agent.md           Guide for contributors and coding agents
 ```
+
+## Contributing
+
+Read [agent.md](agent.md) first. Before opening a pull request, run `npm run typecheck` and `npm run lint`.
