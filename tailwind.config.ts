@@ -99,6 +99,10 @@ export default {
           "0%, 100%": { opacity: "1" },
           "50%": { opacity: "0.7" },
         },
+        "view-in": {
+          from: { opacity: "0", transform: "translateY(6px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -106,9 +110,14 @@ export default {
         "fade-in": "fade-in 0.5s ease-out forwards",
         "slide-in": "slide-in 0.3s ease-out forwards",
         "pulse-soft": "pulse-soft 2s ease-in-out infinite",
+        "view-in": "view-in 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards",
       },
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],
+        // Used by the login, register and forgot-password pages.
+        jakarta: ['"Plus Jakarta Sans"', "system-ui", "sans-serif"],
+        display: ['"Instrument Serif"', "Georgia", "serif"],
+        code: ['"JetBrains Mono"', "ui-monospace", "monospace"],
       },
     },
   },

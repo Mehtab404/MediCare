@@ -131,6 +131,25 @@
   .btn-medical {
     @apply bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-200;
   }
+
+  /* Login, register and forgot-password pages */
+  .auth-dot-pattern {
+    background-color: #f8fafc;
+    background-image: radial-gradient(rgba(15, 23, 42, 0.065) 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
+
+  .auth-right-panel {
+    background:
+      radial-gradient(65% 45% at 85% 12%, rgba(227, 240, 242, 0.55) 0%, transparent 70%),
+      #f8fafc;
+  }
+
+  .auth-card-shadow {
+    box-shadow:
+      0 20px 50px -15px rgba(15, 23, 42, 0.08),
+      0 4px 14px -3px rgba(15, 23, 42, 0.03);
+  }
 }
 
 @layer utilities {
