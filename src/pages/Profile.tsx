@@ -90,12 +90,15 @@ const Profile = () => {
   const setSelect = (field: keyof FormState) => (value: string) => setForm((f) => (f ? { ...f, [field]: value } : f));
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen app-bg">
       <Header />
-      <main className="container mx-auto px-4 py-8 pb-32 max-w-3xl">
+      <main className="container mx-auto px-4 pt-10 pb-32 max-w-3xl">
         <div className="mb-8 animate-fade-in">
-          <h1 className="text-3xl font-bold text-foreground mb-2">My Health Profile</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-[#0F172A] mb-1">
+            My Health{" "}
+            <span className="font-display italic font-normal text-4xl sm:text-5xl text-[#14807A]">Profile</span>
+          </h1>
+          <p className="text-sm text-slate-600">
             {user?.fullName}. Your doctor can see this when you have an appointment with them. Administrators can't.
           </p>
         </div>
