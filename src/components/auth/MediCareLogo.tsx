@@ -1,5 +1,22 @@
-/** MediCare mark: a medical cross with a hummingbird cut out of it. Only one instance per page (fixed mask id). */
-export default function MediCareLogo({ className = "w-full h-full" }: { className?: string }) {
+import { useId } from "react";
+
+/**
+ * MediCare mark: a medical cross with a hummingbird cut out of it.
+ * "dark" is a dark cross on a light tile (login pages). "light" is a white cross with no tile,
+ * for placing on a dark background (the signed-in header).
+ */
+export default function MediCareLogo({
+  className = "w-full h-full",
+  tone = "dark",
+}: {
+  className?: string;
+  tone?: "dark" | "light";
+}) {
+  // Each instance needs its own mask id, or two logos on one page would share one mask.
+  const maskId = `medicare-mark-${useId().replace(/:/g, "")}`;
+  const light = tone === "light";
+  const fill = light ? "#FFFFFF" : "#0F172A";
+
   return (
     <svg
       viewBox="0 0 120 120"
@@ -10,7 +27,7 @@ export default function MediCareLogo({ className = "w-full h-full" }: { classNam
       aria-label="MediCare logo"
     >
       <defs>
-        <mask id="medicare-hummingbird-mask">
+        <mask id={maskId}>
           <rect x="0" y="0" width="120" height="120" fill="white" />
           <g fill="black" stroke="black" strokeWidth="1.2" strokeLinejoin="round" strokeLinecap="round">
             <path d="M56 47 C43 38, 30 31, 21 27 C28 36, 37 44, 49 51 Z" />
@@ -20,10 +37,19 @@ export default function MediCareLogo({ className = "w-full h-full" }: { classNam
           <circle cx="65.5" cy="44.5" r="1.4" fill="white" />
         </mask>
       </defs>
-      <rect x="4" y="4" width="112" height="112" rx="28" fill="#F8FAFC" />
-      <g mask="url(#medicare-hummingbird-mask)">
-        <rect x="43" y="16" width="34" height="88" rx="9" fill="#0F172A" />
-        <rect x="16" y="43" width="88" height="34" rx="9" fill="#0F172A" />
+      {!light && <rect x="4" y="4" width="112" height="112" rx="28" fill="#F8FAFC" />}
+      <g mask={`url(#${maskId})`}>
+        {light ? (
+          <>
+            <rect x="42" y="14" width="36" height="92" rx="10" fill={fill} />
+            <rect x="14" y="42" width="92" height="36" rx="10" fill={fill} />
+          </>
+        ) : (
+          <>
+            <rect x="43" y="16" width="34" height="88" rx="9" fill={fill} />
+            <rect x="16" y="43" width="88" height="34" rx="9" fill={fill} />
+          </>
+        )}
       </g>
     </svg>
   );
