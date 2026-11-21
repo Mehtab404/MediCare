@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Activity, User, Lock, ArrowRight, IdCard } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { IdCard, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import AuthLayout from "@/components/auth/AuthLayout";
+import RoleTabs from "@/components/auth/RoleTabs";
+import { AuthInput, AuthPasswordInput, AuthSubmitButton } from "@/components/auth/fields";
+import { authLabelClass, authLinkButtonClass } from "@/components/auth/authStyles";
+import { usePortalRole } from "@/components/auth/portalRole";
 
 const USER_ID_PATTERN = /^[a-zA-Z0-9._-]{3,32}$/;
 
@@ -15,6 +17,7 @@ const Register = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const { role, setRole, linkState } = usePortalRole();
   const { register } = useAuth();
   const { toast } = useToast();
 
@@ -41,96 +44,92 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-8 bg-background">
-      <div className="w-full max-w-md">
-        <div className="flex items-center gap-3 justify-center mb-8">
-          <div className="p-3 gradient-medical rounded-xl">
-            <Activity className="h-8 w-8 text-primary-foreground" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">MediCare</h1>
-            <p className="text-sm text-muted-foreground">Hospital Management</p>
-          </div>
-        </div>
+    <AuthLayout>
+      <h2 className="text-2xl sm:text-[28px] font-bold tracking-tight">Create account</h2>
+      <p className="text-xs sm:text-sm text-slate-500 mt-1">Register as a patient to book and manage appointments</p>
 
-        <Card className="border-0 shadow-xl">
-          <CardHeader className="text-center pb-2">
-            <h2 className="text-2xl font-bold text-foreground">Create Patient Account</h2>
-            <p className="text-muted-foreground">Register to book and manage appointments</p>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleRegister} className="space-y-4">
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                <Input
-                  placeholder="Full Name"
-                  aria-label="Full Name"
-                  autoComplete="name"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  className="pl-11 h-12"
-                />
-              </div>
-              <div className="relative">
-                <IdCard className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                <Input
-                  placeholder="User ID"
-                  aria-label="User ID"
-                  autoComplete="username"
-                  value={userId}
-                  onChange={(e) => setUserId(e.target.value)}
-                  className="pl-11 h-12"
-                />
-              </div>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                <Input
-                  type="password"
-                  placeholder="Password (min 8 characters)"
-                  aria-label="Password"
-                  autoComplete="new-password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="pl-11 h-12"
-                />
-              </div>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                <Input
-                  type="password"
-                  placeholder="Confirm Password"
-                  aria-label="Confirm Password"
-                  autoComplete="new-password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="pl-11 h-12"
-                />
-              </div>
-
-              <Button type="submit" className="w-full h-12 text-lg font-medium" disabled={isLoading}>
-                {isLoading ? (
-                  <span className="animate-pulse-soft">Creating account...</span>
-                ) : (
-                  <>
-                    Register
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </>
-                )}
-              </Button>
-            </form>
-
-            <div className="mt-6 text-center">
-              <p className="text-sm text-muted-foreground">
-                Already have an account?{" "}
-                <Link to="/" className="text-primary hover:underline font-medium">
-                  Log in
-                </Link>
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="mt-5">
+        <RoleTabs role={role} onChange={setRole} />
       </div>
-    </div>
+
+      {role === "Patient" ? (
+        <form onSubmit={handleRegister} className="mt-5 space-y-3.5" noValidate>
+          <div>
+            <label htmlFor="register-name" className={authLabelClass}>
+              Full Name
+            </label>
+            <AuthInput
+              id="register-name"
+              icon={<User className="w-4 h-4" />}
+              placeholder="e.g. Aarav Sharma"
+              autoComplete="name"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="register-userid" className={authLabelClass}>
+              Choose User ID
+            </label>
+            <AuthInput
+              id="register-userid"
+              icon={<IdCard className="w-4 h-4" />}
+              placeholder="e.g. aarav26"
+              autoComplete="username"
+              value={userId}
+              onChange={(e) => setUserId(e.target.value)}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="register-password" className={authLabelClass}>
+              Password
+            </label>
+            <AuthPasswordInput
+              id="register-password"
+              placeholder="At least 8 characters"
+              autoComplete="new-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="register-confirm" className={authLabelClass}>
+              Confirm Password
+            </label>
+            <AuthPasswordInput
+              id="register-confirm"
+              placeholder="Repeat your password"
+              autoComplete="new-password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+            />
+          </div>
+
+          <AuthSubmitButton loading={isLoading} loadingLabel="Creating Account...">
+            Create Account
+          </AuthSubmitButton>
+
+          <p className="text-[11px] text-slate-500 text-center">
+            You can add an email address later on your Health Profile page to get appointment notifications.
+          </p>
+        </form>
+      ) : (
+        <div className="mt-5 p-4 rounded-2xl bg-[#F8FAFC] border border-[#E2E8F0] text-xs text-slate-600 leading-relaxed" role="status">
+          {role === "Doctor" ? "Doctor" : "Staff"} accounts can't be created here. An administrator creates them and gives you a
+          User ID and password. Log in with those, or choose the Patient tab to register as a patient.
+        </div>
+      )}
+
+      <div className="mt-5 pt-4 border-t border-slate-100 text-center text-xs text-slate-600">
+        Already have an account?
+        <Link to="/" state={linkState} className={authLinkButtonClass}>
+          Log in
+        </Link>
+      </div>
+    </AuthLayout>
   );
 };
 
