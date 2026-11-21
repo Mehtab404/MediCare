@@ -1,5 +1,5 @@
 # MediCare
-
+live product: https://medicare-84qx.onrender.com/
 A hospital patient portal. Patients create an account, browse doctors, book Normal or Tatkal appointments, and view, reschedule, or cancel their bookings. All data is stored in PostgreSQL.
 
 ## Features
