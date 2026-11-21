@@ -2,11 +2,9 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Header from "@/components/Header";
+import DoctorAvatar from "@/components/DoctorAvatar";
 import RescheduleDialog from "@/components/RescheduleDialog";
 import { ErrorState, LoadingState } from "@/components/PageState";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,8 +18,14 @@ import {
 import { Calendar, Clock, MapPin } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api";
-import { formatDate, formatTime, initials } from "@/lib/format";
+import { formatDate, formatTime } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import type { Appointment } from "@/types";
+
+const outlineButton =
+  "px-4 py-2 rounded-full border border-slate-200 bg-white hover:bg-slate-50 text-xs font-semibold text-[#0F172A] transition-colors cursor-pointer";
+const darkButton =
+  "px-4 py-2 rounded-full bg-[#1B2A2F] hover:bg-[#111C20] text-white text-xs font-semibold shadow-sm transition-all cursor-pointer";
 
 const Appointments = () => {
   const queryClient = useQueryClient();
@@ -50,21 +54,25 @@ const Appointments = () => {
   const pastAppointments = appointments.filter((apt) => apt.status !== "upcoming").reverse();
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen app-bg">
       <Header />
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 pt-10 pb-14">
         {/* Page Header */}
         <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 animate-fade-in">
           <div>
-            <h1 className="text-3xl font-bold text-foreground mb-2">My Appointments</h1>
-            <p className="text-muted-foreground">
-              View and manage your appointments
-            </p>
+            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-[#0F172A]">
+              My{" "}
+              <span className="font-display italic font-normal text-4xl sm:text-5xl text-[#14807A]">Appointments</span>
+            </h1>
+            <p className="text-sm text-slate-600 mt-1">View and manage your appointments</p>
           </div>
-          <Button asChild>
-            <Link to="/doctors">Book New Appointment</Link>
-          </Button>
+          <Link
+            to="/doctors"
+            className="px-5 py-3 rounded-full bg-[#1B2A2F] hover:bg-[#111C20] text-white text-xs font-semibold inline-flex items-center gap-2 self-start sm:self-auto shadow-sm transition-all"
+          >
+            + Book New Appointment
+          </Link>
         </div>
 
         {isPending && <LoadingState label="Loading appointments..." />}
@@ -74,138 +82,140 @@ const Appointments = () => {
           <>
             {/* Upcoming Appointments */}
             <section className="mb-10">
-              <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-primary" />
+              <h2 className="text-lg font-bold text-[#0F172A] mb-4 flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-[#14807A]" />
                 Upcoming Appointments ({upcomingAppointments.length})
               </h2>
 
               {upcomingAppointments.length > 0 ? (
-                <div className="grid md:grid-cols-2 gap-4">
+                <div className="grid md:grid-cols-2 gap-5">
                   {upcomingAppointments.map((apt, index) => (
-                    <Card
+                    <div
                       key={apt.id}
-                      className="card-hover animate-fade-in"
+                      className="glass-card rounded-[24px] p-6 transition-transform hover:-translate-y-0.5 animate-fade-in"
                       style={{ animationDelay: `${0.1 * (index + 1)}s` }}
                     >
-                      <CardContent className="p-6">
-                        <div className="flex items-start justify-between mb-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-full gradient-medical flex items-center justify-center text-primary-foreground font-bold">
-                              {initials(apt.doctor.name)}
-                            </div>
-                            <div>
-                              <p className="font-semibold text-foreground">{apt.doctor.name}</p>
-                              <p className="text-sm text-primary">{apt.doctor.specialization}</p>
-                            </div>
-                          </div>
-                          <div className="flex flex-col items-end gap-1">
-                            <Badge className="bg-primary">Upcoming</Badge>
-                            {apt.bookingType === "tatkal" && <Badge variant="secondary">Tatkal</Badge>}
+                      <div className="flex items-start justify-between gap-3 mb-4">
+                        <div className="flex items-center gap-3.5 min-w-0">
+                          <DoctorAvatar id={apt.doctor.id} name={apt.doctor.name} />
+                          <div className="min-w-0">
+                            <p className="text-sm sm:text-base font-bold text-[#0F172A]">{apt.doctor.name}</p>
+                            <p className="text-xs font-medium text-[#14807A] mt-0.5">{apt.doctor.specialization}</p>
                           </div>
                         </div>
+                        <div className="flex flex-col items-end gap-1 shrink-0">
+                          <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-[11px] font-semibold text-emerald-700">
+                            Upcoming
+                          </span>
+                          {apt.bookingType === "tatkal" && (
+                            <span className="px-2.5 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-[11px] font-semibold text-amber-700">
+                              Tatkal
+                            </span>
+                          )}
+                        </div>
+                      </div>
 
-                        <div className="space-y-2 text-sm">
-                          <div className="flex items-center gap-2 text-muted-foreground">
-                            <Calendar className="h-4 w-4" />
-                            <span>{formatDate(apt.date)}</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-muted-foreground">
-                            <Clock className="h-4 w-4" />
-                            <span>{formatTime(apt.time)}</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-muted-foreground">
-                            <MapPin className="h-4 w-4" />
-                            <span>{apt.doctor.location}</span>
-                          </div>
+                      <div className="space-y-2 text-sm text-slate-600">
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4 text-[#14807A]" />
+                          <span className="font-semibold text-[#0F172A]">{formatDate(apt.date)}</span>
                         </div>
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-4 w-4 text-[#14807A]" />
+                          <span>{formatTime(apt.time)}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <MapPin className="h-4 w-4 text-[#14807A]" />
+                          <span>{apt.doctor.location}</span>
+                        </div>
+                      </div>
 
-                        <div className="mt-4 pt-4 border-t border-border flex items-center justify-between flex-wrap gap-2">
-                          <span className="font-semibold text-foreground">₹{apt.amount}</span>
-                          <div className="flex gap-2">
-                            <Button variant="ghost" size="sm" asChild>
-                              <Link to={`/confirmation/${apt.id}`}>Details</Link>
-                            </Button>
-                            <Button variant="outline" size="sm" onClick={() => setToReschedule(apt)}>
-                              Reschedule
-                            </Button>
-                            <Button variant="destructive" size="sm" onClick={() => setToCancel(apt)}>
-                              Cancel
-                            </Button>
-                          </div>
+                      <div className="mt-4 pt-4 border-t border-slate-200/80 flex items-center justify-between flex-wrap gap-2">
+                        <span className="font-bold text-[#0F172A]">₹{apt.amount}</span>
+                        <div className="flex gap-2 flex-wrap">
+                          <Link to={`/confirmation/${apt.id}`} className={outlineButton}>
+                            Details
+                          </Link>
+                          <button type="button" className={outlineButton} onClick={() => setToReschedule(apt)}>
+                            Reschedule
+                          </button>
+                          <button
+                            type="button"
+                            className="px-4 py-2 rounded-full border border-rose-200 bg-rose-50 hover:bg-rose-100 text-xs font-semibold text-rose-700 transition-colors cursor-pointer"
+                            onClick={() => setToCancel(apt)}
+                          >
+                            Cancel
+                          </button>
                         </div>
-                      </CardContent>
-                    </Card>
+                      </div>
+                    </div>
                   ))}
                 </div>
               ) : (
-                <Card>
-                  <CardContent className="p-8 text-center">
-                    <p className="text-muted-foreground">No upcoming appointments</p>
-                    <Button className="mt-4" asChild>
-                      <Link to="/doctors">Book an Appointment</Link>
-                    </Button>
-                  </CardContent>
-                </Card>
+                <div className="glass-card rounded-[24px] p-10 text-center">
+                  <p className="text-sm font-semibold text-[#0F172A]">No upcoming appointments</p>
+                  <Link to="/doctors" className={cn(darkButton, "inline-block mt-4 px-6 py-3")}>
+                    Book an Appointment
+                  </Link>
+                </div>
               )}
             </section>
 
             {/* Past Appointments */}
             <section>
-              <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
-                <Clock className="h-5 w-5 text-muted-foreground" />
-                Past & Cancelled ({pastAppointments.length})
+              <h2 className="text-lg font-bold text-[#0F172A] mb-4 flex items-center gap-2">
+                <Clock className="h-5 w-5 text-slate-500" />
+                Past &amp; Cancelled ({pastAppointments.length})
               </h2>
 
               {pastAppointments.length === 0 ? (
-                <p className="text-muted-foreground">Nothing here yet.</p>
+                <p className="text-sm text-slate-600">Nothing here yet.</p>
               ) : (
                 <div className="space-y-3">
                   {pastAppointments.map((apt, index) => (
-                    <Card
+                    <div
                       key={apt.id}
-                      className="animate-fade-in"
+                      className="glass-card rounded-2xl p-4 animate-fade-in"
                       style={{ animationDelay: `${0.1 * (index + 3)}s` }}
                     >
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between flex-wrap gap-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-muted-foreground font-bold">
-                              {initials(apt.doctor.name)}
-                            </div>
-                            <div>
-                              <p className="font-medium text-foreground">{apt.doctor.name}</p>
-                              <p className="text-sm text-muted-foreground">{apt.doctor.specialization}</p>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-6 text-sm flex-wrap">
-                            <div className="flex items-center gap-2 text-muted-foreground">
-                              <Calendar className="h-4 w-4" />
-                              <span>{formatDate(apt.date)}</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-muted-foreground">
-                              <Clock className="h-4 w-4" />
-                              <span>{formatTime(apt.time)}</span>
-                            </div>
-                            {apt.status === "cancelled" || apt.status === "no_show" ? (
-                              <Badge variant="outline" className="text-destructive border-destructive/40">
-                                {apt.status === "cancelled" ? "Cancelled" : "Missed"}
-                              </Badge>
-                            ) : (
-                              <Badge variant="secondary">{apt.status === "completed" ? "Completed" : "Past"}</Badge>
-                            )}
-                            <Button variant="outline" size="sm" asChild>
-                              <Link to={`/confirmation/${apt.id}`}>View Details</Link>
-                            </Button>
-                            {apt.status === "completed" && (
-                              <Button size="sm" asChild>
-                                <Link to={`/records/${apt.id}`}>Visit Summary</Link>
-                              </Button>
-                            )}
+                      <div className="flex items-center justify-between flex-wrap gap-4">
+                        <div className="flex items-center gap-3">
+                          <DoctorAvatar id={apt.doctor.id} name={apt.doctor.name} size="sm" className="opacity-80" />
+                          <div>
+                            <p className="text-sm font-bold text-[#0F172A]">{apt.doctor.name}</p>
+                            <p className="text-xs text-slate-600">{apt.doctor.specialization}</p>
                           </div>
                         </div>
-                      </CardContent>
-                    </Card>
+
+                        <div className="flex items-center gap-4 text-xs text-slate-600 flex-wrap">
+                          <div className="flex items-center gap-1.5">
+                            <Calendar className="h-3.5 w-3.5 text-[#14807A]" />
+                            <span>{formatDate(apt.date)}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <Clock className="h-3.5 w-3.5 text-[#14807A]" />
+                            <span>{formatTime(apt.time)}</span>
+                          </div>
+                          {apt.status === "cancelled" || apt.status === "no_show" ? (
+                            <span className="px-2.5 py-0.5 rounded-full bg-rose-50 border border-rose-200 text-[11px] font-semibold text-rose-700">
+                              {apt.status === "cancelled" ? "Cancelled" : "Missed"}
+                            </span>
+                          ) : (
+                            <span className="px-2.5 py-0.5 rounded-full bg-slate-100 border border-slate-200 text-[11px] font-semibold text-slate-600">
+                              {apt.status === "completed" ? "Completed" : "Past"}
+                            </span>
+                          )}
+                          <Link to={`/confirmation/${apt.id}`} className={outlineButton}>
+                            View Details
+                          </Link>
+                          {apt.status === "completed" && (
+                            <Link to={`/records/${apt.id}`} className={darkButton}>
+                              Visit Summary
+                            </Link>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   ))}
                 </div>
               )}
