@@ -48,3 +48,28 @@ export async function ensureAdmin() {
   );
   if (rowCount) console.log(`Created admin account "${parsed.data}".`);
 }
+
+/**
+ * Creates a patient account from DEMO_USER_ID and DEMO_PASSWORD if that account doesn't exist yet.
+ * It is a normal patient account with no extra rights. An existing account is never changed, so a password
+ * or User ID you already use is left alone.
+ */
+export async function ensureDemoUser() {
+  const { demoUserId, demoPassword } = config;
+  if (!demoUserId || !demoPassword) return;
+
+  const parsed = userIdSchema.safeParse(demoUserId);
+  const pw = passwordSchema.safeParse(demoPassword);
+  if (!parsed.success || !pw.success) {
+    console.warn("DEMO_USER_ID or DEMO_PASSWORD is invalid. Skipping demo account creation.");
+    return;
+  }
+
+  const hash = await hashPassword(demoPassword);
+  const { rowCount } = await pool.query(
+    `INSERT INTO users (user_id, full_name, password_hash, role) VALUES ($1, 'Demo Patient', $2, 'patient')
+     ON CONFLICT (user_id) DO NOTHING`,
+    [parsed.data, hash],
+  );
+  if (rowCount) console.log(`Created demo patient account "${parsed.data}".`);
+}

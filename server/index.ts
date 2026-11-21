@@ -16,7 +16,7 @@ import { doctorPortalRouter } from "./routes/doctorPortal.ts";
 import { profileRouter } from "./routes/profile.ts";
 import { accountRouter } from "./routes/account.ts";
 import { startReminderJob } from "./lib/reminders.ts";
-import { ensureAdmin } from "./lib/users.ts";
+import { ensureAdmin, ensureDemoUser } from "./lib/users.ts";
 
 const app = express();
 
@@ -75,6 +75,7 @@ async function start() {
   await migrate();
   await seedDoctorsIfEmpty();
   await ensureAdmin();
+  await ensureDemoUser();
   app.listen(config.port, (err?: Error) => {
     if (err) {
       console.error(`Could not listen on port ${config.port}:`, err.message);

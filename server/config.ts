@@ -46,6 +46,9 @@ export const config = {
   /** Optional. When both are set, an admin account with this User ID is created on start if it doesn't exist. */
   adminUserId: process.env.ADMIN_USER_ID?.trim().toLowerCase() || null,
   adminPassword: process.env.ADMIN_PASSWORD || null,
+  /** Optional. When both are set, a patient account with this User ID is created on start if it doesn't exist. */
+  demoUserId: process.env.DEMO_USER_ID?.trim().toLowerCase() || null,
+  demoPassword: process.env.DEMO_PASSWORD || null,
   /** Hospital time zone. Used to decide what "today" and "now" mean for bookings. */
   timeZone: "Asia/Kolkata",
   /** Public address of the site, used for links in emails. On Render this falls back to the service URL. */
