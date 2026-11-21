@@ -12,6 +12,7 @@ A hospital patient portal. Patients create an account, browse doctors, book Norm
 - [Features](#features)
 - [Run locally](#run-locally)
 - [Environment variables](#environment-variables)
+- [Demo account](#demo-account)
 - [Scripts](#scripts)
 - [API](#api)
 - [Email](#email)
@@ -88,12 +89,23 @@ The server also applies migrations every time it starts, and seeds the doctors i
 | `NODE_ENV` | No | `production` turns on secure cookies. |
 | `ADMIN_USER_ID` | No | With `ADMIN_PASSWORD`, creates the first admin account on server start if that User ID doesn't exist. |
 | `ADMIN_PASSWORD` | No | Password for that admin (8+ characters). Only used when the account is created. |
+| `DEMO_USER_ID` | No | With `DEMO_PASSWORD`, creates a demo patient account on server start if that User ID doesn't exist. See [Demo account](#demo-account). |
+| `DEMO_PASSWORD` | No | Password for the demo account (8+ characters). Only used when the account is created. |
 | `SMTP_HOST` | No | Mail server. Without it, emails are printed to the server log in development and not sent in production. |
 | `SMTP_PORT` | No | Default `587` (STARTTLS). |
 | `SMTP_SECURE` | No | `true` for port 465. Default `false`. |
 | `SMTP_USER`, `SMTP_PASSWORD` | No | Mail server login. Set both or neither. |
 | `EMAIL_FROM` | With `SMTP_HOST` | Sender, for example `MediCare <no-reply@yourdomain.com>`. |
 | `APP_URL` | No | Public address of the site, used for links in emails. Defaults to `http://localhost:8080`, or the service URL on Render. |
+
+## Demo account
+
+To get a ready-made patient login for trying the app, set `DEMO_USER_ID` and `DEMO_PASSWORD` before the server starts (in `.env` locally, or in the Environment tab on Render). The server creates a patient account called "Demo Patient" if that User ID doesn't exist yet.
+
+- It is an ordinary patient account with no extra rights. Doctors and admins are not affected.
+- An existing account is never changed. If someone already registered that User ID, or changes the demo password later, restarting the server doesn't reset it.
+- Nothing is created when the variables are unset, so a real deployment has no account with a known password.
+- Use fake data only, and a password you don't use anywhere else. Anyone you give the login to can see and change that account's data.
 
 ## Scripts
 
@@ -177,6 +189,7 @@ The repository includes a `render.yaml` Blueprint that creates a Postgres databa
 2. Render creates `medicare-db` and `medicare`, generates `JWT_SECRET`, sets `DATABASE_URL`, and asks you for `ADMIN_PASSWORD` (the first admin's password; the User ID defaults to `admin`).
 3. On first start the server creates the tables, seeds the doctors and creates the admin account. Log in at the service URL with `admin` and the password you gave.
 4. Optional: add `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD` and `EMAIL_FROM` in the service's Environment tab to turn on email. `APP_URL` defaults to the service's own URL, so you don't need to set it.
+5. Optional: add `DEMO_USER_ID` and `DEMO_PASSWORD` in the Environment tab to create a demo patient account (see [Demo account](#demo-account)). Render restarts the service when you save.
 
 Things to know about Render's free plan (checked against [Render's docs](https://render.com/docs/free)):
 
