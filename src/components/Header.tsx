@@ -48,7 +48,7 @@ const Header = () => {
   const navItems = user ? NAV_ITEMS[user.role] : [];
 
   return (
-    <div className="sticky top-4 z-50 container mx-auto px-4 pt-4">
+    <div className="relative z-50 container mx-auto px-4 pt-4">
       <header className="rounded-2xl bg-white/85 backdrop-blur-md border border-slate-200/80 shadow-sm px-4 sm:px-6 py-3.5">
         <div className="flex flex-wrap items-center justify-between gap-4">
           {/* Logo */}
