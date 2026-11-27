@@ -72,7 +72,7 @@ const Dashboard = () => {
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/80 border border-slate-200/90 text-xs font-medium text-slate-600 mb-3 shadow-sm">
             <span className="w-2 h-2 rounded-full bg-[#14807A]" />
             <span>
-              Signed in as <strong className="text-[#0F172A]">{user?.userId}</strong>
+              User ID: <strong className="text-[#0F172A]">{user?.userId}</strong>
             </span>
           </div>
           <h1 className="text-3xl sm:text-5xl font-bold tracking-tight text-slate-900 leading-tight">
